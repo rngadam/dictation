@@ -1,6 +1,9 @@
+import { franc } from 'https://esm.sh/franc@6?bundle';
+
 // --- STATE MANAGEMENT ---
 const state = {
     text: '',
+    lang: 'en-US', // Default language
     sentences: [],
     words: [],
     currentSentenceIndex: 0,
@@ -24,7 +27,10 @@ const settings = {
 // --- DOM ELEMENTS (will be assigned on DOMContentLoaded) ---
 let appContainer, textInput, playBtn, pausePlayBtn, stopBtn, repeatWordBtn,
     repeatSentenceBtn, revealTextBtn, progressBar, studyCountEl, studyTotalEl,
-    sentenceCurrentEl, sentenceTotalEl, wordCurrentEl, wordTotalEl;
+    sentenceCurrentEl, sentenceTotalEl, wordCurrentEl, wordTotalEl,
+    settingsIcon, settingsModal, settingsForm, settingsCloseBtn,
+    studyReadThroughsInput, baseSpeedInput, baseSpeedDisplay,
+    pauseMultiplierInput, pauseMultiplierDisplay;
 
 // --- VIEW MANAGEMENT ---
 function switchView(viewName) {
@@ -36,6 +42,18 @@ function switchView(viewName) {
     console.log(`Switched to ${viewName} view`);
 }
 
+const langMap = {
+    'eng': 'en-US',
+    'spa': 'es-ES',
+    'fra': 'fr-FR',
+    'deu': 'de-DE',
+    'ita': 'it-IT',
+    'jpn': 'ja-JP',
+    'rus': 'ru-RU',
+    'ell': 'el-GR', // Greek
+    'cmn': 'zh-CN', // Mandarin Chinese
+};
+
 // --- CORE FUNCTIONS ---
 function startDictation() {
     state.text = textInput.value.trim();
@@ -43,6 +61,12 @@ function startDictation() {
         alert('Please paste some text to begin.');
         return;
     }
+
+    // Language Detection
+    const langCode = franc(state.text, { minLength: 3 });
+    state.lang = langMap[langCode] || 'en-US';
+    console.log(`Detected language: ${langCode} -> ${state.lang}`);
+
 
     // Tokenization
     state.sentences = state.text.match(/[^.!?]+[.!?\s]*/g) || [state.text];
@@ -75,6 +99,7 @@ function runStudyPhase() {
         const speed = settings.baseSpeed - (0.2 * (count - 1));
         const fullTextUtterance = new SpeechSynthesisUtterance(state.text);
         fullTextUtterance.rate = speed > 0.3 ? speed : 0.3;
+        fullTextUtterance.lang = state.lang;
         fullTextUtterance.onend = () => {
             if (count < readThroughs) {
                 setTimeout(readFullText, 1000); // Pause between read-throughs
@@ -113,6 +138,7 @@ function speakCurrentSentence() {
     const sentence = state.sentences[state.currentSentenceIndex];
     utterance = new SpeechSynthesisUtterance(sentence);
     utterance.rate = settings.baseSpeed;
+    utterance.lang = state.lang;
 
     utterance.onstart = () => {
         state.isSpeaking = true;
@@ -140,7 +166,10 @@ function speakCurrentSentence() {
         state.isSpeaking = false;
         state.currentSentenceIndex++;
         if (state.currentSentenceIndex < state.sentences.length) {
-            const syllables = (window.syllable && window.syllable(sentence)) || sentence.length / 5;
+            // For English, we use the syllable library for more natural pausing.
+            // For other languages, syllable() returns 0, so we fall back to a
+            // character-length-based heuristic, which is language-agnostic.
+            const syllables = (state.lang === 'en-US' && window.syllable && window.syllable(sentence)) || (sentence.length / 5);
             const pauseDuration = syllables * settings.syllablePauseMultiplier;
             setTimeout(speakCurrentSentence, pauseDuration);
         } else {
@@ -183,6 +212,7 @@ function repeatLastWord() {
     if (wordToRepeat) {
         const repeatUtterance = new SpeechSynthesisUtterance(wordToRepeat);
         repeatUtterance.rate = settings.baseSpeed;
+        repeatUtterance.lang = state.lang;
         synth.speak(repeatUtterance);
     }
 
@@ -201,6 +231,7 @@ function repeatCurrentSentence() {
     if (sentenceToRepeat) {
         const repeatUtterance = new SpeechSynthesisUtterance(sentenceToRepeat);
         repeatUtterance.rate = settings.baseSpeed;
+        repeatUtterance.lang = state.lang;
         synth.speak(repeatUtterance);
     }
 
@@ -270,6 +301,30 @@ function resetProgress() {
 }
 
 
+function openSettingsModal() {
+    // Populate the form with current settings
+    studyReadThroughsInput.value = settings.studyReadThroughs;
+    baseSpeedInput.value = settings.baseSpeed;
+    baseSpeedDisplay.textContent = settings.baseSpeed;
+    pauseMultiplierInput.value = settings.syllablePauseMultiplier;
+    pauseMultiplierDisplay.textContent = settings.syllablePauseMultiplier;
+    settingsModal.classList.add('visible');
+}
+
+function closeSettingsModal() {
+    settingsModal.classList.remove('visible');
+}
+
+function saveSettings(event) {
+    event.preventDefault();
+    settings.studyReadThroughs = parseInt(studyReadThroughsInput.value, 10);
+    settings.baseSpeed = parseFloat(baseSpeedInput.value);
+    settings.syllablePauseMultiplier = parseInt(pauseMultiplierInput.value, 10);
+    console.log('Settings saved:', settings);
+    closeSettingsModal();
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- ASSIGN DOM ELEMENTS ---
     appContainer = document.getElementById('app-container');
@@ -287,6 +342,16 @@ document.addEventListener('DOMContentLoaded', () => {
     sentenceTotalEl = document.getElementById('sentence-total');
     wordCurrentEl = document.getElementById('word-current');
     wordTotalEl = document.getElementById('word-total');
+    settingsIcon = document.getElementById('settings-icon');
+    settingsModal = document.getElementById('settings-modal');
+    settingsForm = document.getElementById('settings-form');
+    settingsCloseBtn = document.getElementById('settings-close-btn');
+    studyReadThroughsInput = document.getElementById('study-read-throughs-input');
+    baseSpeedInput = document.getElementById('base-speed-input');
+    baseSpeedDisplay = document.getElementById('base-speed-display');
+    pauseMultiplierInput = document.getElementById('pause-multiplier-input');
+    pauseMultiplierDisplay = document.getElementById('pause-multiplier-display');
+
 
     // --- EVENT LISTENERS ---
     playBtn.addEventListener('click', startDictation);
@@ -295,6 +360,14 @@ document.addEventListener('DOMContentLoaded', () => {
     repeatWordBtn.addEventListener('click', repeatLastWord);
     repeatSentenceBtn.addEventListener('click', repeatCurrentSentence);
     revealTextBtn.addEventListener('click', revealText);
+    settingsIcon.addEventListener('click', openSettingsModal);
+    settingsCloseBtn.addEventListener('click', closeSettingsModal);
+    settingsForm.addEventListener('submit', saveSettings);
+
+    // Live update for range sliders
+    baseSpeedInput.addEventListener('input', (e) => baseSpeedDisplay.textContent = e.target.value);
+    pauseMultiplierInput.addEventListener('input', (e) => pauseMultiplierDisplay.textContent = e.target.value);
+
 
     // Initialize view
     switchView('setup');
