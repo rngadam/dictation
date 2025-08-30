@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="app-container" class="setup-view">
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <header>
+            <h1>Dictation</h1>
+            <div id="settings-icon">⚙️</div>
+        </header>
+
+        <main>
+            <textarea id="text-input" placeholder="Paste your text here for dictation..."></textarea>
+
+            <div id="study-status" class="status-panel">
+                <p>Read-through: <span id="study-count">1</span> of <span id="study-total">2</span></p>
+            </div>
+
+            <div id="test-status" class="status-panel">
+                <p>Sentence: <span id="sentence-current">1</span> / <span id="sentence-total">1</span></p>
+                <p>Word: <span id="word-current">1</span> / <span id="word-total">1</span></p>
+            </div>
+
+            <div id="correction-view">
+                <button id="reveal-text-btn">Reveal Text for Correction</button>
+            </div>
+        </main>
+
+        <footer>
+            <div id="controls">
+                <!-- Setup View -->
+                <button id="play-btn" class="control-btn setup-view-control">Play</button>
+                <!-- Test View -->
+                <button id="repeat-word-btn" class="control-btn test-view-control"><< Repeat Word</button>
+                <button id="repeat-sentence-btn" class="control-btn test-view-control"><< Repeat Sentence</button>
+                <button id="pause-play-btn" class="control-btn test-view-control">Pause</button>
+                <button id="stop-btn" class="control-btn test-view-control">Stop</button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/syllable@5.0.1/index.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
