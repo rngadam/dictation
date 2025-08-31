@@ -291,3 +291,17 @@ footer {
 #settings-close-btn:hover {
     background-color: #5a6268;
 }
+
+/* Hide pause groups by default */
+#word-pause-group,
+#syllable-pause-group {
+    display: none;
+}
+
+#syllable-status {
+    display: none;
+}
+
+#test-status.syllable-mode #syllable-status {
+    display: block;
+}

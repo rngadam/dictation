@@ -28,6 +28,22 @@
                         <input type="range" id="pause-multiplier-input" min="25" max="150" step="5">
                         <span id="pause-multiplier-display">50</span>
                     </div>
+                    <div class="form-group">
+                        <label for="reading-mode-select">Reading Mode</label>
+                        <select id="reading-mode-select">
+                            <option value="sentence">Sentence</option>
+                            <option value="word">Word</option>
+                            <option value="syllable">Syllable (Greek Only)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="word-pause-group">
+                        <label for="word-pause-input">Inter-word Pause (ms)</label>
+                        <input type="number" id="word-pause-input" min="0" step="50">
+                    </div>
+                    <div class="form-group" id="syllable-pause-group">
+                        <label for="syllable-pause-input">Inter-syllable Pause (ms)</label>
+                        <input type="number" id="syllable-pause-input" min="0" step="50">
+                    </div>
                     <div class="form-actions">
                         <button type="button" id="settings-close-btn">Close</button>
                         <button type="submit" id="settings-save-btn">Save</button>
@@ -55,6 +71,7 @@
             <div id="test-status" class="status-panel">
                 <p>Sentence: <span id="sentence-current">1</span> / <span id="sentence-total">1</span></p>
                 <p>Word: <span id="word-current">1</span> / <span id="word-total">1</span></p>
+                <p id="syllable-status">Syllable: <span id="syllable-current">1</span> / <span id="syllable-total">1</span></p>
             </div>
 
             <div id="correction-view">

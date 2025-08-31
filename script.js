@@ -1,4 +1,7 @@
 import { franc } from 'https://esm.sh/franc@6?bundle';
+import accentuation from 'https://esm.sh/modern-greek-accentuation';
+
+const { modernGreekSyllabify } = accentuation;
 
 // --- STATE MANAGEMENT ---
 const state = {
@@ -21,7 +24,10 @@ let utterance = null;
 const settings = {
     studyReadThroughs: 2,
     baseSpeed: 1.0,
-    syllablePauseMultiplier: 50, // ms per syllable
+    syllablePauseMultiplier: 50, // ms per syllable. Renamed to pauseMultiplier in UI.
+    readingMode: 'sentence', // 'sentence', 'word', 'syllable'
+    wordPause: 200, // ms
+    syllablePause: 100, // ms
 };
 
 // --- DOM ELEMENTS (will be assigned on DOMContentLoaded) ---
@@ -30,7 +36,9 @@ let appContainer, textInput, playBtn, pausePlayBtn, stopBtn, repeatWordBtn,
     sentenceCurrentEl, sentenceTotalEl, wordCurrentEl, wordTotalEl,
     settingsIcon, settingsModal, settingsForm, settingsCloseBtn,
     studyReadThroughsInput, baseSpeedInput, baseSpeedDisplay,
-    pauseMultiplierInput, pauseMultiplierDisplay;
+    pauseMultiplierInput, pauseMultiplierDisplay, readingModeSelect,
+    wordPauseGroup, wordPauseInput, syllablePauseGroup, syllablePauseInput,
+    testStatus, syllableStatus, syllableCurrent, syllableTotal;
 
 // --- VIEW MANAGEMENT ---
 function switchView(viewName) {
@@ -126,7 +134,20 @@ function runTestPhase() {
     switchView('test');
     state.currentSentenceIndex = 0;
     state.currentWordIndex = 0;
-    speakCurrentSentence();
+
+    const { readingMode } = settings;
+
+    if (readingMode === 'syllable' && state.lang === 'el-GR') {
+        testStatus.classList.add('syllable-mode');
+        speakSyllableBySyllable();
+    } else {
+        testStatus.classList.remove('syllable-mode');
+        if (readingMode === 'word') {
+            speakWordByWord();
+        } else {
+            speakCurrentSentence();
+        }
+    }
 }
 
 function speakCurrentSentence() {
@@ -178,6 +199,114 @@ function speakCurrentSentence() {
     };
 
     synth.speak(utterance);
+}
+
+function speakWordByWord() {
+    if (state.currentSentenceIndex >= state.sentences.length) {
+        switchView('correction');
+        return;
+    }
+
+    const sentence = state.sentences[state.currentSentenceIndex];
+    const wordsInSentence = sentence.split(/[\s,;:.!?]+/).filter(Boolean);
+    let wordInSentenceIndex = 0;
+
+    function speakNextWord() {
+        if (wordInSentenceIndex >= wordsInSentence.length) {
+            // End of sentence, move to the next one
+            state.currentSentenceIndex++;
+            speakWordByWord(); // Recurse for the next sentence
+            return;
+        }
+
+        // --- Update Progress ---
+        let precedingWords = 0;
+        for (let i = 0; i < state.currentSentenceIndex; i++) {
+            precedingWords += state.sentences[i].split(/[\s,;:.!?]+/).filter(Boolean).length;
+        }
+        state.currentWordIndex = precedingWords + wordInSentenceIndex;
+        updateOverallProgress((state.currentWordIndex + 1) / state.words.length);
+        updateTestStatus(wordInSentenceIndex);
+        // --- End Progress Update ---
+
+        const word = wordsInSentence[wordInSentenceIndex];
+        const wordUtterance = new SpeechSynthesisUtterance(word);
+        wordUtterance.lang = state.lang;
+        wordUtterance.rate = settings.baseSpeed;
+
+        wordUtterance.onend = () => {
+            wordInSentenceIndex++;
+            setTimeout(speakNextWord, settings.wordPause);
+        };
+
+        synth.speak(wordUtterance);
+    }
+
+    speakNextWord();
+}
+
+function speakSyllableBySyllable() {
+    if (state.currentSentenceIndex >= state.sentences.length) {
+        switchView('correction');
+        return;
+    }
+
+    const sentence = state.sentences[state.currentSentenceIndex];
+    const wordsInSentence = sentence.split(/[\s,;:.!?]+/).filter(Boolean);
+    let wordInSentenceIndex = 0;
+    let syllableInWordIndex = 0;
+    let syllablesOfCurrentWord = [];
+
+    function speakNextSyllable() {
+        if (syllableInWordIndex >= syllablesOfCurrentWord.length) {
+            // End of word, move to the next one
+            wordInSentenceIndex++;
+            syllableInWordIndex = 0;
+            setTimeout(processNextWord, settings.wordPause);
+            return;
+        }
+
+        // Update syllable progress
+        syllableCurrent.textContent = syllableInWordIndex + 1;
+        syllableTotal.textContent = syllablesOfCurrentWord.length;
+
+        const syllable = syllablesOfCurrentWord[syllableInWordIndex];
+        const syllableUtterance = new SpeechSynthesisUtterance(syllable);
+        syllableUtterance.lang = state.lang;
+        syllableUtterance.rate = settings.baseSpeed;
+
+        syllableUtterance.onend = () => {
+            syllableInWordIndex++;
+            setTimeout(speakNextSyllable, settings.syllablePause);
+        };
+
+        synth.speak(syllableUtterance);
+    }
+
+    function processNextWord() {
+        if (wordInSentenceIndex >= wordsInSentence.length) {
+            // End of sentence
+            state.currentSentenceIndex++;
+            speakSyllableBySyllable(); // Recurse for next sentence
+            return;
+        }
+
+        // --- Update Word Progress ---
+        let precedingWords = 0;
+        for (let i = 0; i < state.currentSentenceIndex; i++) {
+            precedingWords += state.sentences[i].split(/[\s,;:.!?]+/).filter(Boolean).length;
+        }
+        state.currentWordIndex = precedingWords + wordInSentenceIndex;
+        updateOverallProgress((state.currentWordIndex + 1) / state.words.length);
+        updateTestStatus(wordInSentenceIndex);
+        // --- End Word Progress Update ---
+
+        const word = wordsInSentence[wordInSentenceIndex];
+        syllablesOfCurrentWord = modernGreekSyllabify(word);
+        speakNextSyllable();
+    }
+
+    processNextWord();
 }
 
 function stopDictation() {
@@ -308,6 +437,13 @@ function openSettingsModal() {
     baseSpeedDisplay.textContent = settings.baseSpeed;
     pauseMultiplierInput.value = settings.syllablePauseMultiplier;
     pauseMultiplierDisplay.textContent = settings.syllablePauseMultiplier;
+    readingModeSelect.value = settings.readingMode;
+    wordPauseInput.value = settings.wordPause;
+    syllablePauseInput.value = settings.syllablePause;
+
+    // Update visibility of pause inputs
+    togglePauseInputs();
+
     settingsModal.classList.add('visible');
 }
 
@@ -320,8 +456,17 @@ function saveSettings(event) {
     settings.studyReadThroughs = parseInt(studyReadThroughsInput.value, 10);
     settings.baseSpeed = parseFloat(baseSpeedInput.value);
     settings.syllablePauseMultiplier = parseInt(pauseMultiplierInput.value, 10);
+    settings.readingMode = readingModeSelect.value;
+    settings.wordPause = parseInt(wordPauseInput.value, 10);
+    settings.syllablePause = parseInt(syllablePauseInput.value, 10);
     console.log('Settings saved:', settings);
     closeSettingsModal();
+}
+
+function togglePauseInputs() {
+    const selectedMode = readingModeSelect.value;
+    wordPauseGroup.style.display = selectedMode === 'word' ? 'block' : 'none';
+    syllablePauseGroup.style.display = selectedMode === 'syllable' ? 'block' : 'none';
 }
 
 
@@ -351,6 +496,15 @@ document.addEventListener('DOMContentLoaded', () => {
     baseSpeedDisplay = document.getElementById('base-speed-display');
     pauseMultiplierInput = document.getElementById('pause-multiplier-input');
     pauseMultiplierDisplay = document.getElementById('pause-multiplier-display');
+    readingModeSelect = document.getElementById('reading-mode-select');
+    wordPauseGroup = document.getElementById('word-pause-group');
+    wordPauseInput = document.getElementById('word-pause-input');
+    syllablePauseGroup = document.getElementById('syllable-pause-group');
+    syllablePauseInput = document.getElementById('syllable-pause-input');
+    testStatus = document.getElementById('test-status');
+    syllableStatus = document.getElementById('syllable-status');
+    syllableCurrent = document.getElementById('syllable-current');
+    syllableTotal = document.getElementById('syllable-total');
 
 
     // --- EVENT LISTENERS ---
@@ -363,6 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsIcon.addEventListener('click', openSettingsModal);
     settingsCloseBtn.addEventListener('click', closeSettingsModal);
     settingsForm.addEventListener('submit', saveSettings);
+    readingModeSelect.addEventListener('change', togglePauseInputs);
 
     // Live update for range sliders
     baseSpeedInput.addEventListener('input', (e) => baseSpeedDisplay.textContent = e.target.value);
