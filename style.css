@@ -294,14 +294,6 @@ footer {
 
 /* Hide pause groups by default */
 #word-pause-group,
-#syllable-pause-group {
+#word-repeats-group {
     display: none;
-}
-
-#syllable-status {
-    display: none;
-}
-
-#test-status.syllable-mode #syllable-status {
-    display: block;
 }

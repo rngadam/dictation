@@ -33,16 +33,30 @@
                         <select id="reading-mode-select">
                             <option value="sentence">Sentence</option>
                             <option value="word">Word</option>
-                            <option value="syllable">Syllable (Greek Only)</option>
                         </select>
                     </div>
                     <div class="form-group" id="word-pause-group">
                         <label for="word-pause-input">Inter-word Pause (ms)</label>
                         <input type="number" id="word-pause-input" min="0" step="50">
                     </div>
-                    <div class="form-group" id="syllable-pause-group">
-                        <label for="syllable-pause-input">Inter-syllable Pause (ms)</label>
-                        <input type="number" id="syllable-pause-input" min="0" step="50">
+                    <div class="form-group">
+                        <label for="paragraph-pause-input">Pause Between Paragraphs (ms)</label>
+                        <input type="number" id="paragraph-pause-input" min="0" step="100">
+                    </div>
+
+                    <hr>
+                    <h4>Repetitions</h4>
+                    <div class="form-group">
+                        <label for="paragraph-repeats-input">Paragraph Repetitions</label>
+                        <input type="number" id="paragraph-repeats-input" min="1" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="sentence-repeats-input">Sentence Repetitions</label>
+                        <input type="number" id="sentence-repeats-input" min="1" step="1">
+                    </div>
+                    <div class="form-group" id="word-repeats-group">
+                        <label for="word-repeats-input">Word Repetitions</label>
+                        <input type="number" id="word-repeats-input" min="1" step="1">
                     </div>
                     <div class="form-actions">
                         <button type="button" id="settings-close-btn">Close</button>
@@ -71,7 +85,6 @@
             <div id="test-status" class="status-panel">
                 <p>Sentence: <span id="sentence-current">1</span> / <span id="sentence-total">1</span></p>
                 <p>Word: <span id="word-current">1</span> / <span id="word-total">1</span></p>
-                <p id="syllable-status">Syllable: <span id="syllable-current">1</span> / <span id="syllable-total">1</span></p>
             </div>
 
             <div id="correction-view">
@@ -86,13 +99,13 @@
                 <!-- Test View -->
                 <button id="repeat-word-btn" class="control-btn test-view-control"><< Repeat Word</button>
                 <button id="repeat-sentence-btn" class="control-btn test-view-control"><< Repeat Sentence</button>
+                <button id="repeat-paragraph-btn" class="control-btn test-view-control"><< Repeat Paragraph</button>
                 <button id="pause-play-btn" class="control-btn test-view-control">Pause</button>
                 <button id="stop-btn" class="control-btn test-view-control">Stop</button>
             </div>
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/syllable@5.0.1/index.min.js"></script>
     <script src="script.js" type="module"></script>
 </body>
 </html>
