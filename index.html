@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="app-container" class="setup-view">
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2>Settings</h2>
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="study-read-throughs-input">Study Read-Throughs</label>
+                        <input type="number" id="study-read-throughs-input" min="0" max="5" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="base-speed-input">Speech Speed</label>
+                        <input type="range" id="base-speed-input" min="0.5" max="2" step="0.1">
+                        <span id="base-speed-display">1.0</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="pause-multiplier-input">Pause Between Sentences (Multiplier)</label>
+                        <input type="range" id="pause-multiplier-input" min="25" max="150" step="5">
+                        <span id="pause-multiplier-display">50</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="reading-mode-select">Reading Mode</label>
+                        <select id="reading-mode-select">
+                            <option value="sentence">Sentence</option>
+                            <option value="word">Word</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="word-pause-group">
+                        <label for="word-pause-input">Inter-word Pause (ms)</label>
+                        <input type="number" id="word-pause-input" min="0" step="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="paragraph-pause-input">Pause Between Paragraphs (ms)</label>
+                        <input type="number" id="paragraph-pause-input" min="0" step="100">
+                    </div>
+
+                    <hr>
+                    <h4>Repetitions</h4>
+                    <div class="form-group">
+                        <label for="paragraph-repeats-input">Paragraph Repetitions</label>
+                        <input type="number" id="paragraph-repeats-input" min="1" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="sentence-repeats-input">Sentence Repetitions</label>
+                        <input type="number" id="sentence-repeats-input" min="1" step="1">
+                    </div>
+                    <div class="form-group" id="word-repeats-group">
+                        <label for="word-repeats-input">Word Repetitions</label>
+                        <input type="number" id="word-repeats-input" min="1" step="1">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="settings-close-btn">Close</button>
+                        <button type="submit" id="settings-save-btn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <header>
+            <h1>Dictation</h1>
+            <div id="settings-icon">⚙️</div>
+        </header>
+
+        <main>
+            <textarea id="text-input" placeholder="Paste your text here for dictation..."></textarea>
+
+            <div id="study-status" class="status-panel">
+                <p>Read-through: <span id="study-count">1</span> of <span id="study-total">2</span></p>
+            </div>
+
+            <div id="test-status" class="status-panel">
+                <p>Sentence: <span id="sentence-current">1</span> / <span id="sentence-total">1</span></p>
+                <p>Word: <span id="word-current">1</span> / <span id="word-total">1</span></p>
+            </div>
+
+            <div id="correction-view">
+                <button id="reveal-text-btn">Reveal Text for Correction</button>
+            </div>
+        </main>
+
+        <footer>
+            <div id="controls">
+                <!-- Setup View -->
+                <button id="play-btn" class="control-btn setup-view-control">Play</button>
+                <!-- Test View -->
+                <button id="repeat-word-btn" class="control-btn test-view-control"><< Repeat Word</button>
+                <button id="repeat-sentence-btn" class="control-btn test-view-control"><< Repeat Sentence</button>
+                <button id="repeat-paragraph-btn" class="control-btn test-view-control"><< Repeat Paragraph</button>
+                <button id="pause-play-btn" class="control-btn test-view-control">Pause</button>
+                <button id="stop-btn" class="control-btn test-view-control">Stop</button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js" type="module"></script>
+</body>
+</html>
